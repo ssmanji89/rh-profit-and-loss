@@ -5,7 +5,7 @@
 
 class RobinhoodException(Exception):
     """
-        Wrapper for custom Robinhood library exceptions
+        Wrapper for custom robinhood library exceptions
     """
 
     pass
@@ -13,8 +13,9 @@ class RobinhoodException(Exception):
 
 class LoginFailed(RobinhoodException):
     """
-        Unable to login to Robinhood
+        Unable to login to robinhood
     """
+
     pass
 
 
@@ -38,4 +39,13 @@ class InvalidInstrumentId(RobinhoodException):
     """
         When an invalid instrument id is given
     """
+
+    pass
+
+
+class InvalidOptionId(RobinhoodException):
+    """
+        When an invalid option id is given
+    """
+
     pass

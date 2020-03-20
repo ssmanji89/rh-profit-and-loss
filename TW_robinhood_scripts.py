@@ -10,7 +10,7 @@ import json
 import csv
 import pandas as pd
 pd.options.mode.chained_assignment = None  # default='warn', to silence the errors about copy
-import Robinhood
+import robinhood as Robinhood
 
 
 ### ORDER HISTORY STUFF ###
@@ -22,19 +22,19 @@ def get_symbol_from_instrument_url(url, df):
 
     try:
         symbol = df.loc[url]['symbol']
-    
+
     except Exception as e:
         response = requests.get(url)
         symbol = response.json()['symbol']
         df.at[url, 'symbol'] = symbol
         # time.sleep(np.random.randint(low=0, high=2, size=(1))[0])
-   
+
     return symbol, df
 
 def order_item_info(order, my_trader, df):
     #side: .side,  price: .average_price, shares: .cumulative_quantity, instrument: .instrument, date : .last_transaction_at
     symbol, df = get_symbol_from_instrument_url(order['instrument'], df)
-    
+
     order_info_dict = {
         'side': order['side'],
         'avg_price': order['average_price'],
@@ -51,7 +51,7 @@ def order_item_info(order, my_trader, df):
     return order_info_dict
 
 def get_all_history_orders(my_trader):
-    
+
     orders = []
     past_orders = my_trader.order_history()
     orders.extend(past_orders['results'])
@@ -71,10 +71,10 @@ def mark_pending_orders(row):
     else:
         order_status_is_pending = False
     return order_status_is_pending
-# df_order_history.apply(mark_pending_orders, axis=1)    
+# df_order_history.apply(mark_pending_orders, axis=1)
 
 def get_order_history(my_trader):
-    
+
     # Get unfiltered list of order history
     past_orders = get_all_history_orders(my_trader)
 
@@ -109,9 +109,9 @@ def get_all_history_options_orders(my_trader):
         past_options_orders = fetch_json_by_url(my_trader, next_url)
         options_orders.extend(past_options_orders['results'])
     # print("{} order fetched".format(len(orders)))
-    
+
     options_orders_cleaned = []
-    
+
     for each in options_orders:
         if float(each['processed_premium']) < 1:
             continue
@@ -125,10 +125,10 @@ def get_all_history_options_orders(my_trader):
                 value = round(float(each['processed_premium']), 2)*-1
             else:
                 value = round(float(each['processed_premium']), 2)
-                
+
             one_order = [pd.to_datetime(each['created_at']), each['chain_symbol'], value, each['legs'][0]['position_effect']]
             options_orders_cleaned.append(one_order)
-    
+
     df_options_orders_cleaned = pd.DataFrame(options_orders_cleaned)
     df_options_orders_cleaned.columns = ['date', 'ticker', 'value', 'position_effect']
     df_options_orders_cleaned = df_options_orders_cleaned.sort_values('date')

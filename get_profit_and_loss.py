@@ -8,7 +8,7 @@ import pandas as pd
 import requests
 import operator
 import TW_robinhood_scripts as rh
-import Robinhood
+import robinhood as Robinhood
 
 def rh_profit_and_loss(username=None, password=None, starting_allocation=5000, start_date=None, end_date=None, csv_export=1, buy_and_hold=0, pickle=0, options=1):
 
@@ -21,7 +21,7 @@ def rh_profit_and_loss(username=None, password=None, starting_allocation=5000, s
             self.price = float(price)
             self.date = date
             self.state = state
-        
+
         def pl(self):
             if self.side == 'buy':
                 return -1 * int(self.shares) * float(self.price)
@@ -37,17 +37,17 @@ def rh_profit_and_loss(username=None, password=None, starting_allocation=5000, s
 
 
     def itemize_stocks():
-        
+
         # Create list for each stock
         stocks = {}
         with open('orders.csv', 'r') as csvfile:
             lines = csv.reader(csvfile, delimiter=',')
             for line in lines:
-                
+
                 ticker = line[1]
-                
+
                 price = line[3]
-                
+
                 # Check for header or invalid entries
                 if ticker == 'symbol' or price == '':
                     continue
@@ -55,7 +55,7 @@ def rh_profit_and_loss(username=None, password=None, starting_allocation=5000, s
                 # Add stock to dict if not already in there
                 if ticker not in stocks:
                     stocks[ticker] = Stock(ticker)
-            
+
                 # Add order to stock
                 stocks[ticker].orders.append(Order(line[0], line[1], line[2], line[3], line[4], line[5]))
         return stocks
@@ -72,14 +72,14 @@ def rh_profit_and_loss(username=None, password=None, starting_allocation=5000, s
 
             # Handle outstanding shares - should be current positions
             if stock.net_shares > 0:
-                
+
                 requestResponse = requests.get("https://api.iextrading.com/1.0/stock/{}/price".format(stock.symbol.lower()))
                 json = requestResponse.json()
                 last_price = float(json)
 
                 # Add currently held shares from net_pl as if selling now (unrealized PnL)
                 stock.net_pl += stock.net_shares * last_price
-                    
+
             # Should handle free gift stocks
             elif stock.net_shares < 0:
                 stock.symbol += ' '
@@ -124,8 +124,8 @@ def rh_profit_and_loss(username=None, password=None, starting_allocation=5000, s
             total_trades += num_trades
         writer.writerow(['Totals', total_pl, total_trades])
         # print('Created', outfile.name, 'in this directory.')
-    
-    # Read the pnl we generated       
+
+    # Read the pnl we generated
     df_pnl = pd.read_csv('stockwise_pl.csv')
 
     # Get dividends from Robinhood
@@ -142,7 +142,7 @@ def rh_profit_and_loss(username=None, password=None, starting_allocation=5000, s
 
     # Load in our pickled database of instrument-url lookups
     instruments_df = pd.read_pickle('symbol_and_instrument_urls')
-    
+
     df_dividends['ticker'] = np.nan
     for each in df_dividends.itertuples():
         symbol, instruments_df = rh.get_symbol_from_instrument_url(each.instrument, instruments_df)
@@ -180,11 +180,11 @@ def rh_profit_and_loss(username=None, password=None, starting_allocation=5000, s
     # Set div payouts column
     df_pnl['div_payouts'] = np.nan
 
-    # For each in the summed 
+    # For each in the summed
     for each in df_divs_summed.itertuples():
         amount = each.amount
         df_pnl.loc[each.ticker, 'div_payouts'] = amount
-    
+
     if pickle == 1:
         df_divs_summed.to_pickle('df_divs_summed')
         df_pnl.to_pickle('df_pnl')
@@ -196,12 +196,12 @@ def rh_profit_and_loss(username=None, password=None, starting_allocation=5000, s
     # Calculate the dividends received (or that are confirmed you will receive in the future)
     dividends_paid = float(df_pnl.sum()['div_payouts'])
 
-    # Calculate the total pnl 
+    # Calculate the total pnl
     pnl = float(df_pnl.sum()['net_pnl'])
 
     if buy_and_hold == 1:
 
-        # Get historical price of QQQ 
+        # Get historical price of QQQ
         requestResponse = requests.get("https://api.iextrading.com/1.0/stock/qqq/chart/5y")
         json = requestResponse.json()
         df_qqq = pd.DataFrame(json)
@@ -245,16 +245,16 @@ def rh_profit_and_loss(username=None, password=None, starting_allocation=5000, s
     total_pnl = round(pnl + dividends_paid + options_pnl, 2)
 
 
-    # Print final output            
+    # Print final output
     print("~~~")
     print("From {} to {}, your total PnL is ${}".format(start_date, end_date_string, total_pnl))
     print("You've made ${} buying and selling individual equities, received ${} in dividends, and ${} on options trades".format(round(pnl,2), round(dividends_paid,2), round(options_pnl,2)))
-    
+
     # Calculate ROI, if the user input a starting allocation
     if roi == 1:
         return_on_investment = round((total_pnl/starting_allocation)*100, 2)
         print("Your return-on-investment (ROI) is: %{}".format(return_on_investment))
-    
+
     if buy_and_hold == 1:
         print("With a starting allocation of ${}, if you had just bought and held QQQ, your PnL would be ${}".format(starting_allocation, round(QQQ_buy_and_hold_gain,2)))
     print("~~~")
@@ -264,7 +264,7 @@ def rh_profit_and_loss(username=None, password=None, starting_allocation=5000, s
 if __name__ == '__main__':
 
     # Parse command line arguments
-    parser = argparse.ArgumentParser()  
+    parser = argparse.ArgumentParser()
     parser.add_argument("--username", help="username (required)")
     parser.add_argument("--password", help="password (required)")
     parser.add_argument("--start_date", help="begin date for calculations")
@@ -282,13 +282,13 @@ if __name__ == '__main__':
         sys.exit()
 
     # check for flag
-    if args.csv:  
+    if args.csv:
         csv_export = 1
     else:
         csv_export = 0
 
     # check for flag
-    if args.pickle:  
+    if args.pickle:
         pickle = 1
     else:
         pickle = 0
@@ -298,7 +298,7 @@ if __name__ == '__main__':
         start_date = args.start_date
     else:
         start_date = 'January 1, 2012'
-    
+
     # check for end date
     if args.end_date:
         end_date = args.end_date
@@ -313,12 +313,12 @@ if __name__ == '__main__':
         starting_allocation = 10000
         roi = 0
 
-    rh_profit_and_loss(username=args.username, 
+    rh_profit_and_loss(username=args.username,
                         password=args.password,
-                        start_date=start_date, 
-                        end_date=end_date, 
-                        starting_allocation=starting_allocation, 
-                        csv_export=csv_export, 
+                        start_date=start_date,
+                        end_date=end_date,
+                        starting_allocation=starting_allocation,
+                        csv_export=csv_export,
                         buy_and_hold=1,
-                        options=1, 
+                        options=1,
                         pickle=pickle)
