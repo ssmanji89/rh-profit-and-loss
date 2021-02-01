@@ -128,7 +128,7 @@ class Robinhood:
         self.mfa_code = res["mfa_code"]
         self.scope = res["scope"]
 
-    def login(self, username, password, challenge_type="email", qr_code=None):
+    def login(self, username, password, challenge_type="sms", qr_code=None):
         """Save and test login info for Robinhood accounts
         Args:
             username (str): username
